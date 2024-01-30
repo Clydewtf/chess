@@ -10,4 +10,12 @@ namespace Chess
     {
         WHITE, BLACK
     }
+
+    public static class ColorExtensions
+    {
+        public static Color opposite(this Color color)
+        {
+            return color == Color.WHITE ? Color.BLACK : Color.WHITE;
+        }
+    }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Chess.board;
 using Chess.piece;
 
 namespace Chess
@@ -11,7 +13,10 @@ namespace Chess
     {
         private readonly Board _board;
         protected BoardConsoleRenderer renderer = new BoardConsoleRenderer();
-        protected InputCoordinates inputCoordinates = new InputCoordinates();
+        protected List<GameStateChecker> checkers = new List<GameStateChecker> {
+            new StalemateGameStateChecker(),
+            new CheckmateGameStateChecker()
+        };
         protected Board board { get { return _board; } }
 
         public Game(Board board)
@@ -20,14 +25,15 @@ namespace Chess
         }
         public void gameLoop()
         {
-            bool isWhiteToMove = true;
+            Color colorToMove = Color.WHITE;
+            GameState state = determineGameState(board, colorToMove);
 
-            while (true)
+            while (state == GameState.ONGOING)
             {
                 //render
                 renderer.render(board);
 
-                if (isWhiteToMove )
+                if (colorToMove == Color.WHITE)
                 {
                     Console.WriteLine("White to move");
                 }
@@ -37,23 +43,34 @@ namespace Chess
                 }
 
                 //input
-                Coordinates sourceCoordinates = inputCoordinates.inputPieceCoordinatesForColor(
-                    isWhiteToMove ? Color.WHITE : Color.BLACK, board);
-
-                Piece piece = board.getPiece(sourceCoordinates);
-                HashSet<Coordinates> availableMoveSquare = piece.getAvailableMoveSquares(board);
-
-                //render
-                renderer.render(board, piece);
-
-                Coordinates targetCoordinates = inputCoordinates.inputAvailableSquare(availableMoveSquare);
+                Move move = InputCoordinates.inputMove(board, colorToMove, renderer);
 
                 //make move
-                board.movePiece(sourceCoordinates, targetCoordinates);
+                board.makeMove(move);
 
                 //pass move
-                isWhiteToMove =! isWhiteToMove;
+                colorToMove = colorToMove.opposite();
+
+                state = determineGameState(board, colorToMove);
             }
+
+            renderer.render(board);
+            Console.WriteLine("Game ended with state = " + state);
+        }
+
+        private GameState determineGameState(Board board, Color color)
+        {
+            foreach (GameStateChecker checker in checkers)
+            {
+                GameState state = checker.check(board, color);
+
+                if (state != GameState.ONGOING)
+                {
+                    return state;
+                }
+            }
+
+            return GameState.ONGOING;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Chess.board;
 
 namespace Chess.piece
 {
@@ -47,6 +48,37 @@ namespace Chess.piece
             return board.isSquareEmpty(coordinates) || board.getPiece(coordinates).color != color;
         }
 
+        protected virtual bool isSquareAvailableForAttack(Coordinates coordinates, Board board)
+        {
+            return true;
+        }
+
         protected abstract HashSet<CoordinatesShift> getPieceMoves();
+
+        protected virtual HashSet<CoordinatesShift> getPieceAttacks()
+        {
+            return getPieceMoves();
+        }
+
+        public HashSet<Coordinates> getAttackedSquares(Board board)
+        {
+            HashSet<CoordinatesShift> pieceAttacks = getPieceAttacks();
+            HashSet<Coordinates> result = new HashSet<Coordinates>();
+
+            foreach (CoordinatesShift pieceAttack in pieceAttacks)
+            {
+                if (coordinates.canShift(pieceAttack))
+                {
+                    Coordinates shiftedCoordinates = coordinates.shift(pieceAttack);
+
+                    if (isSquareAvailableForAttack(shiftedCoordinates, board))
+                    {
+                        result.Add(shiftedCoordinates);
+                    }
+                }
+            }
+
+            return result;
+        }
     }
 }

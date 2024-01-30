@@ -1,4 +1,5 @@
-﻿using Chess.piece;
+﻿using Chess.board;
+using Chess.piece;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Chess
 {
     public class InputCoordinates
     {
-        public Coordinates input()
+        public static Coordinates input()
         {
             while (true)
             {
@@ -56,7 +57,7 @@ namespace Chess
             }
         }
 
-        public Coordinates inputPieceCoordinatesForColor(Color color, Board board)
+        public static Coordinates inputPieceCoordinatesForColor(Color color, Board board)
         {
             while (true)
             {
@@ -87,7 +88,7 @@ namespace Chess
             }
         }
 
-        public Coordinates inputAvailableSquare(HashSet<Coordinates> coordinates)
+        public static Coordinates inputAvailableSquare(HashSet<Coordinates> coordinates)
         {
             while (true)
             {
@@ -102,6 +103,45 @@ namespace Chess
 
                 return _input;
             }
+        }
+
+        public static Move inputMove(Board board, Color color, BoardConsoleRenderer renderer)
+        {
+            while (true)
+            {
+                //input
+                Coordinates sourceCoordinates = inputPieceCoordinatesForColor(color, board);
+
+                Piece piece = board.getPiece(sourceCoordinates);
+                HashSet<Coordinates> availableMoveSquare = piece.getAvailableMoveSquares(board);
+
+                //render
+                renderer.render(board, piece);
+
+                Coordinates targetCoordinates = inputAvailableSquare(availableMoveSquare);
+
+                Move move = new Move(sourceCoordinates, targetCoordinates);
+
+                //check if King in check after move
+                if (validateIfKingInCheckAfterMove(board, color, move))
+                {
+                    Console.WriteLine("Your king is under attack!");
+                    continue;
+                }
+
+                return move;
+            }
+        }
+
+        private static bool validateIfKingInCheckAfterMove(Board board, Color color, Move move)
+        {
+            Board copy = new BoardFactory().copy(board);
+
+            copy.makeMove(move);
+
+            //we trust that there is king on the board
+            Piece? king = copy.getPiecesByColor(color).Where(piece => piece is King).FirstOrDefault();
+            return copy.isSquareAttackedByColor(king.coordinates, color.opposite());
         }
 
         //public static void Main(string[] args)
